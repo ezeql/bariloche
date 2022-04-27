@@ -117,7 +117,7 @@ func GetDB() (*sqlx.DB, error) {
 	return sqlx.Open("snowflake", dsn)
 }
 
-func GenerateStages() {
+func GenerateStages(db, schema string) {
 	sdb, err := GetDB()
 	if err != nil {
 		log.Fatal(err)
@@ -125,8 +125,6 @@ func GenerateStages() {
 
 	outputDir := DefaultDir()
 	var res TFResources
-	db := ""
-	schema := ""
 
 	stages, err := snowflake.ListStages(db, schema, sdb.DB)
 	if err != nil {
