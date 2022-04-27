@@ -1,3 +1,3 @@
 # bariloche
 
-Bariloche is atool for generating terraform files and state from existing Snowflake.com
+Bariloche is a tool for generating terraform files and state from existing Snowflake.com
