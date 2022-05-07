@@ -117,7 +117,7 @@ func GetDB() (*sqlx.DB, error) {
 	return sqlx.Open("snowflake", dsn)
 }
 
-func GenerateStages(db, schema string) {
+func GenerateTables(dbName, schemaName string) {
 	sdb, err := GetDB()
 	if err != nil {
 		log.Fatal(err)
@@ -126,7 +126,34 @@ func GenerateStages(db, schema string) {
 	outputDir := DefaultDir()
 	var res TFResources
 
-	stages, err := snowflake.ListStages(db, schema, sdb.DB)
+	tables, err := snowflake.ListTables(dbName, schemaName, sdb.DB)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, t := range tables {
+		res.Collect(t)
+	}
+
+	outFile := filepath.Join(outputDir, "table.tf")
+
+	RunGenerateTerraformFiles(res, outputDir, outFile)
+
+}
+
+func allDatabases() {
+	snowflake.ListDatases()
+}
+func GenerateStages(dbName, schemaName string) {
+	sdb, err := GetDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	outputDir := DefaultDir()
+	var res TFResources
+
+	stages, err := snowflake.ListStages(dbName, schemaName, sdb.DB)
 	if err != nil {
 		log.Fatal(err)
 	}

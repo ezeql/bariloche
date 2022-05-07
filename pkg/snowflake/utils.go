@@ -52,8 +52,10 @@ func (h helper) SetTableColumn(c Column) helper {
 	colBody.SetAttributeValue("type", cty.StringVal(c._type))
 
 	if c._default != nil {
-		SetAttributeIfNotEmpty(colBody, "default", c._default.expression)
+		defBody := colBody.AppendNewBlock("default", nil).Body()
+		SetAttributeIfNotEmpty(defBody, "expression", c._default.expression)
 	}
+	//TODO: constant sequence
 
 	colBody.SetAttributeValue("nullable", cty.BoolVal(c.nullable))
 

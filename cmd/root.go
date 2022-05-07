@@ -16,6 +16,12 @@ var cfgFile string
 
 const EnvPrefix = "SNOWFLAKE"
 
+// var databaseName string
+var tableName string
+var schemaNema string
+
+var databaseName string
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "bariloche",
@@ -42,6 +48,7 @@ func init() {
 	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.bariloche.yaml)")
+	rootCmd.PersistentFlags().StringVar(&schemaNema, "schemaName", "", "schema name")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
