@@ -5,7 +5,11 @@ package cmd
 
 import (
 	"fmt"
+	"log"
+	"path/filepath"
 
+	"github.com/ezeql/bariloche/pkg/bariloche"
+	"github.com/ezeql/bariloche/pkg/snowflake"
 	"github.com/spf13/cobra"
 )
 
@@ -21,6 +25,34 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("generateRoles called")
+
+		sdb, err := bariloche.GetDB()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		roles, err := snowflake.ListRoles(sdb.DB)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		outputDir := bariloche.DefaultDir()
+		var res bariloche.TFResources
+
+		for _, r := range roles {
+			res.Collect(r)
+		}
+
+		outFile := filepath.Join(outputDir, "role.tf")
+
+		if err := bariloche.RunGenerateTerraformFiles(res, outputDir, outFile); err != nil {
+			log.Fatalln(err)
+		}
+
+		if err := bariloche.RunTerraformImport(res, outputDir); err != nil {
+			log.Fatalln(err)
+		}
+
 	},
 }
 

@@ -52,42 +52,42 @@ func RunGenerateTerraformFiles(resources TFResources, outputDir string, outFile 
 	return nil
 }
 
-func RunTerraformImport(resources TFResources, outputDir string) {
+func RunTerraformImport(resources TFResources, outputDir string) error {
 	tmpDir, err := ioutil.TempDir("", "tfinstall")
 	if err != nil {
-		log.Fatalf("error creating temp dir: %s", err)
+		return fmt.Errorf("error creating temp dir: %w", err)
 	}
 	defer os.RemoveAll(tmpDir)
 
 	execPath, err := tfinstall.Find(context.Background(), tfinstall.LatestVersion(tmpDir, false))
 	if err != nil {
-		log.Fatalf("error locating Terraform binary: %s", err)
+		return fmt.Errorf("error locating Terraform binary: %w", err)
 	}
 
 	tf, err := tfexec.NewTerraform(outputDir, execPath)
 	if err != nil {
-		log.Fatalf("error running NewTerraform: %s", err)
+		return fmt.Errorf("error running NewTerraform: %w", err)
 	}
 
 	err = tf.Init(context.Background(), tfexec.Upgrade(true))
 	if err != nil {
-		log.Fatalf("error running Init: %s", err)
+		return fmt.Errorf("error running Init: %w", err)
 	}
 
 	for _, res := range resources.data {
 		err = tf.Import(context.Background(), res.Address(), res.ID())
 		if err != nil {
-			// fmt.Printf("error running Import res: %s \n", err)
+			fmt.Printf("error running Import res: %s \n", err)
 			continue
 		}
 	}
 
-	state, err := tf.Show(context.Background())
-	if err != nil {
-		log.Fatalf("error running Show: %s", err)
+	if _, err := tf.Show(context.Background()); err != nil {
+		return fmt.Errorf("error running Show: %w", err)
 	}
+	// fmt.Println("state", state.Values)
 
-	fmt.Println("state", state.Values)
+	return nil
 }
 
 func DefaultDir() string {
@@ -141,8 +141,8 @@ func GenerateTables(dbName, schemaName string) {
 
 }
 
-func allDatabases() {
-	snowflake.ListDatases()
+func GenerateDatabases() {
+	// snowflake.ListDatases()
 }
 func GenerateStages(dbName, schemaName string) {
 	sdb, err := GetDB()

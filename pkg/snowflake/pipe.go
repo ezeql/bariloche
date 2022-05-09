@@ -32,15 +32,15 @@ func (p Pipe) ID() string {
 	return PipeID(p)
 }
 
-func GeneratePipe(pipe Pipe) string {
-	return buildTerraformHelper(SnowflakePipe, pipe.Name).
-		SetAttributeString("name", pipe.Name).
-		SetAttributeString("database", pipe.DatabaseName).
-		SetAttributeString("schema", pipe.SchemaName).
-		SetAttributeString("comment", pipe.Comment).
-		SetAttributeString("copy_statement", pipe.Definition).
-		SetAttributeBool("auto_ingest", !pipe.Integration.Valid). // Integration is NULL if auto_ingest is true
-		String()
+func (p Pipe) HCL() []byte {
+	return buildTerraformHelper(SnowflakePipe, p.Name).
+		SetAttributeString("name", p.Name).
+		SetAttributeString("database", p.DatabaseName).
+		SetAttributeString("schema", p.SchemaName).
+		SetAttributeString("comment", p.Comment).
+		SetAttributeString("copy_statement", p.Definition).
+		SetAttributeBool("auto_ingest", !p.Integration.Valid). // Integration is NULL if auto_ingest is true
+		File.Bytes()
 }
 
 func GeneratePipeSQL(pipe Pipe) string {

@@ -4,8 +4,6 @@ Copyright © 2022 Ezequiel Moreno
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/ezeql/bariloche/pkg/bariloche"
 	"github.com/spf13/cobra"
 )
@@ -16,21 +14,14 @@ var generateStagesCmd = &cobra.Command{
 	Short: "Generates terraform files representing Snowflake Stages",
 	Long:  `Generates terraform files representing Snowflake Stages`,
 	Run: func(cmd *cobra.Command, args []string) {
-
-		fmt.Printf("args: %v\n", args)
-		dbName := cmd.Flag("tableName").Value.String()
+		dbName := cmd.Flag("databaseName").Value.String()
 		schemaName := cmd.Flag("schemaName").Value.String()
-
-		fmt.Printf("dbName: %v\n", dbName)
-		fmt.Printf("schemaNema: %v\n", schemaNema)
-
 		bariloche.GenerateStages(dbName, schemaName)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(generateStagesCmd)
-
-	generateStagesCmd.PersistentFlags().StringVar(&tableName, "tableName", "", "table name")
-
+	generateStagesCmd.PersistentFlags().StringVar(&databaseName, "databaseName", "", "database name")
+	generateStagesCmd.PersistentFlags().StringVar(&schemaNema, "schemaName", "", "schema name")
 }

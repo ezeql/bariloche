@@ -2,22 +2,31 @@ package snowflake
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 )
 
-func (db *Database) Address() string {
-	panic("not implemented") // TODO: Implement
+const SnowflakeDatabase = "snowflake_database"
+
+func (db Database) Address() string {
+	return fmt.Sprintf("%v.%v", SnowflakeDatabase, strings.ToLower(db.DBName.String))
 }
 
-func (db *Database) ID() string {
-	panic("not implemented") // TODO: Implement
+func (db Database) ID() string {
+	return db.DBName.String
 }
 
-func (db *Database) HCL() []byte {
-	panic("not implemented") // TODO: Implement
+// func PipeID(pipe Pipe) string {
+// 	return fmt.Sprintf("%v|%v|%v", pipe.DatabaseName, pipe.SchemaName, pipe.Name)
+// }
+
+func (db Database) HCL() []byte {
+	return buildTerraformHelper(SnowflakeDatabase, db.DBName.String).
+		SetAttributeString("name", db.DBName.String).File.Bytes()
 }
 
 type Database struct {

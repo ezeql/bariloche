@@ -25,6 +25,12 @@ func (r Role) ID() string {
 	return r.Name.String
 }
 
+func (r Role) HCL() []byte {
+	return buildTerraformHelper(SnowflakeRole, r.Name.String).
+		SetAttributeNullString("name", r.Name).
+		SetAttributeNullString("comment", r.Comment).File.Bytes()
+}
+
 func ListRoles(db *sql.DB) ([]Role, error) {
 	stmt := "SHOW ROLES"
 	rows, err := Query(db, stmt)
@@ -42,8 +48,8 @@ func ListRoles(db *sql.DB) ([]Role, error) {
 	return roles, errors.Wrapf(err, "unable to scan row for %s", stmt)
 }
 
-func GenerateRole(role Role) string {
-	return buildTerraformHelper(SnowflakeRole, role.Name.String).
-		SetAttributeNullString("name", role.Name).
-		SetAttributeNullString("comment", role.Comment).String()
-}
+// func GenerateRole(role Role) string {
+// 	return buildTerraformHelper(SnowflakeRole, role.Name.String).
+// 		SetAttributeNullString("name", role.Name).
+// 		SetAttributeNullString("comment", role.Comment).String()
+// }

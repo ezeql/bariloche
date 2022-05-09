@@ -37,14 +37,5 @@ func init() {
 	rootCmd.AddCommand(generateTablesCmd)
 
 	generateTablesCmd.PersistentFlags().StringVar(&databaseName, "databaseName", "", "database name")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// generateTablesCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// generateTablesCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	generateTablesCmd.PersistentFlags().StringVar(&schemaNema, "schemaName", "", "schema name")
 }

@@ -21,6 +21,24 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("generateAll called")
+
+		generateDatabasesCmd.Run(cmd, args)
+
+		//have all databases
+
+		//list all schemas for a db
+
+		//list all stables for a schema
+
+		generatePipesCmd.Run(cmd, args)
+		generateRolesCmd.Run(cmd, args)
+		generateStagesCmd.Run(cmd, args)
+
+		generateTablesCmd.Run(cmd, args)
+
+		generateUsersCmd.Run(cmd, args)
+		generateViewsCmd.Run(cmd, args)
+		generateWarehousesCmd.Run(cmd, args)
 	},
 }
 
