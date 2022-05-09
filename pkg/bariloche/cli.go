@@ -4,14 +4,12 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/ezeql/bariloche/pkg/snowflake"
 	"github.com/hashicorp/terraform-exec/tfexec"
-	"github.com/hashicorp/terraform-exec/tfinstall"
 	"github.com/jmoiron/sqlx"
 	sf "github.com/snowflakedb/gosnowflake"
 	"github.com/spf13/viper"
@@ -26,6 +24,7 @@ func (r *TFResources) Collect(res snowflake.TFResource) {
 }
 
 func RunGenerateTerraformFiles(resources TFResources, outputDir string, outFile string) error {
+	log.Println("generating terraform files")
 	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
 		return err
 	}
@@ -53,23 +52,32 @@ func RunGenerateTerraformFiles(resources TFResources, outputDir string, outFile 
 }
 
 func RunTerraformImport(resources TFResources, outputDir string) error {
-	tmpDir, err := ioutil.TempDir("", "tfinstall")
-	if err != nil {
-		return fmt.Errorf("error creating temp dir: %w", err)
-	}
-	defer os.RemoveAll(tmpDir)
+	log.Println("importing state")
 
-	execPath, err := tfinstall.Find(context.Background(), tfinstall.LatestVersion(tmpDir, false))
-	if err != nil {
-		return fmt.Errorf("error locating Terraform binary: %w", err)
-	}
+	//TODO:  ====================== CHECK below text for terraform path dowloading vs reusing =======================
 
-	tf, err := tfexec.NewTerraform(outputDir, execPath)
+	// tmpDir, err := ioutil.TempDir("", "tfinstall")
+	// if err != nil {
+	// 	return fmt.Errorf("error creating temp dir: %w", err)
+	// }
+	// defer os.RemoveAll(tmpDir)
+
+	// log.Println("finding latest terraform version")
+	// execPath, err := tfinstall.Find(context.Background(), tfinstall.LatestVersion(outputDir, false))
+	// if err != nil {
+	// 	return fmt.Errorf("error locating Terraform binary: %w", err)
+	// }
+
+	//TODO:  ====================== CHECK the above =======================
+
+	log.Println("running new terraform")
+	tf, err := tfexec.NewTerraform(outputDir, "/opt/homebrew/bin/terraform")
 	if err != nil {
 		return fmt.Errorf("error running NewTerraform: %w", err)
 	}
 
-	err = tf.Init(context.Background(), tfexec.Upgrade(true))
+	log.Println("running init")
+	err = tf.Init(context.Background(), tfexec.Upgrade(false))
 	if err != nil {
 		return fmt.Errorf("error running Init: %w", err)
 	}
@@ -138,6 +146,7 @@ func GenerateTables(dbName, schemaName string) {
 	outFile := filepath.Join(outputDir, "table.tf")
 
 	RunGenerateTerraformFiles(res, outputDir, outFile)
+	RunTerraformImport(res, outputDir)
 
 }
 

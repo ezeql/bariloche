@@ -26,7 +26,9 @@ func (db Database) ID() string {
 
 func (db Database) HCL() []byte {
 	return buildTerraformHelper(SnowflakeDatabase, db.DBName.String).
-		SetAttributeString("name", db.DBName.String).File.Bytes()
+		SetAttributeString("name", db.DBName.String).
+		SetAttributeString("comment", db.Comment.String).
+		File.Bytes()
 }
 
 type Database struct {

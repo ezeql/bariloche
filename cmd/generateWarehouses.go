@@ -43,7 +43,7 @@ to quickly create a Cobra application.`,
 			res.Collect(w)
 		}
 
-		outFile := filepath.Join(outputDir, "view.tf")
+		outFile := filepath.Join(outputDir, "warehouse.tf")
 
 		if err := bariloche.RunGenerateTerraformFiles(res, outputDir, outFile); err != nil {
 			log.Fatalln(err)

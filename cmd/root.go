@@ -35,6 +35,7 @@ var rootCmd = &cobra.Command{
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
@@ -48,7 +49,6 @@ func init() {
 	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.bariloche.yaml)")
-	rootCmd.PersistentFlags().StringVar(&schemaNema, "schemaName", "", "schema name")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

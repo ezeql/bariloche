@@ -30,15 +30,15 @@ to quickly create a Cobra application.`,
 
 		//list all stables for a schema
 
-		generatePipesCmd.Run(cmd, args)
-		generateRolesCmd.Run(cmd, args)
-		generateStagesCmd.Run(cmd, args)
+		// generatePipesCmd.Run(cmd, args)
+		// generateRolesCmd.Run(cmd, args)
+		// generateStagesCmd.Run(cmd, args)
 
-		generateTablesCmd.Run(cmd, args)
+		// generateTablesCmd.Run(cmd, args)
 
-		generateUsersCmd.Run(cmd, args)
-		generateViewsCmd.Run(cmd, args)
-		generateWarehousesCmd.Run(cmd, args)
+		// generateUsersCmd.Run(cmd, args)
+		// generateViewsCmd.Run(cmd, args)
+		// generateWarehousesCmd.Run(cmd, args)
 	},
 }
 

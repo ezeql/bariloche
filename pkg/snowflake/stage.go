@@ -39,8 +39,8 @@ func GenerateStage(stage Stage) []byte {
 		SetAttributeNullString("database", stage.DatabaseName).
 		SetAttributeNullString("schema", stage.SchemaName).
 		SetAttributeNullString("comment", stage.Comment).
+		SetAttributeNullString("storage_integration", stage.StorageIntegration).
 		SetAttributeNullString("url", stage.URL)
-
 	return h.File.Bytes()
 
 }

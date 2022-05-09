@@ -26,9 +26,6 @@ to quickly create a Cobra application.`,
 		databaseName := cmd.Flag("databaseName").Value.String()
 		schemaName := cmd.Flag("schemaName").Value.String()
 
-		fmt.Printf("databaseName: %v\n", databaseName)
-		fmt.Printf("schemaNema: %v\n", schemaNema)
-
 		bariloche.GenerateTables(databaseName, schemaName)
 	},
 }

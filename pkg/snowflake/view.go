@@ -54,5 +54,8 @@ func ListViews(databaseName string, schemaName string, db *sql.DB) ([]View, erro
 		log.Printf("[DEBUG] no views found")
 		return nil, nil
 	}
-	return dbs, fmt.Errorf("unable to scan row for: %w", err)
+
+	log.Println("eror", err)
+
+	return dbs, err
 }

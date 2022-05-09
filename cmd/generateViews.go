@@ -30,12 +30,20 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
+		if err := cmd.MarkFlagRequired("databaseName"); err != nil {
+			log.Fatalln(err)
+		}
+
+		if err := cmd.MarkFlagRequired("schemaName"); err != nil {
+			log.Fatalln(err)
+		}
+
 		dbName := cmd.Flag("databaseName").Value.String()
 		schemaName := cmd.Flag("schemaName").Value.String()
 
 		views, err := snowflake.ListViews(dbName, schemaName, sdb.DB)
 		if err != nil {
-			log.Fatalln(err)
+			log.Fatalln("fatal", err)
 		}
 
 		outputDir := bariloche.DefaultDir()
@@ -60,6 +68,8 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(generateViewsCmd)
+
 	generateViewsCmd.PersistentFlags().StringVar(&databaseName, "databaseName", "", "database name")
 	generateViewsCmd.PersistentFlags().StringVar(&schemaNema, "schemaName", "", "schema name")
+
 }
