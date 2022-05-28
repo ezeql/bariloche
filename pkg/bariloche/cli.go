@@ -23,8 +23,11 @@ func (r *TFResources) Collect(res snowflake.TFResource) {
 	r.Data = append(r.Data, res)
 }
 
-func RunGenerateTerraformFiles(resources TFResources, outputDir string, outFile string) error {
+func RunGenerateTerraformFiles(resources *TFResources, outputDir string, outFile string) error {
 	log.Println("generating terraform files")
+	if len(resources.Data) == 0 {
+		return fmt.Errorf("nothing to generate")
+	}
 	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
 		return err
 	}
@@ -33,7 +36,9 @@ func RunGenerateTerraformFiles(resources TFResources, outputDir string, outFile 
 		return err
 	}
 
-	f, err := os.Create(outFile)
+	fileAbs := filepath.Join(outputDir, outFile)
+
+	f, err := os.Create(fileAbs)
 	if err != nil {
 		return err
 	}
@@ -125,33 +130,24 @@ func GetDB() (*sqlx.DB, error) {
 	return sqlx.Open("snowflake", dsn)
 }
 
-func GenerateTables(dbName, schemaName string) {
-	sdb, err := GetDB()
-	if err != nil {
-		log.Fatal(err)
+func GenerateTables(dbName, schemaName string) (*TFResources, error) {
+	f := func(in *TFResources, sdb *sqlx.DB) error {
+		dbs, err := snowflake.ListTables(dbName, schemaName, sdb.DB)
+		if err != nil {
+			return err
+		}
+		for _, db := range dbs {
+			in.Collect(db)
+		}
+		return nil
 	}
 
-	outputDir := DefaultDir()
-	var res TFResources
-
-	tables, err := snowflake.ListTables(dbName, schemaName, sdb.DB)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, t := range tables {
-		res.Collect(t)
-	}
-
-	outFile := filepath.Join(outputDir, "table.tf")
-
-	RunGenerateTerraformFiles(res, outputDir, outFile)
-	RunTerraformImport(res, outputDir)
+	return generateResource(DefaultDir(), "table.tf", f)
 
 }
 
 func GenerateDatabases() (*TFResources, error) {
-	f := func(in TFResources, sdb *sqlx.DB) error {
+	f := func(in *TFResources, sdb *sqlx.DB) error {
 		dbs, err := snowflake.ListDatabases(sdb)
 		if err != nil {
 			return err
@@ -165,85 +161,53 @@ func GenerateDatabases() (*TFResources, error) {
 	return generateResource(DefaultDir(), "database.tf", f)
 
 }
-func GenerateStages(dbName, schemaName string) {
-	sdb, err := GetDB()
-	if err != nil {
-		log.Fatal(err)
+func GenerateStages(dbName, schemaName string) (*TFResources, error) {
+	f := func(in *TFResources, sdb *sqlx.DB) error {
+		dbs, err := snowflake.ListStages(dbName, schemaName, sdb.DB)
+		if err != nil {
+			return err
+		}
+		for _, u := range dbs {
+			in.Collect(u)
+		}
+		return nil
 	}
 
-	outputDir := DefaultDir()
-	var res TFResources
-
-	stages, err := snowflake.ListStages(dbName, schemaName, sdb.DB)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, s := range stages {
-		res.Collect(s)
-	}
-
-	outFile := filepath.Join(outputDir, "stage.tf")
-
-	RunGenerateTerraformFiles(res, outputDir, outFile)
-	RunTerraformImport(res, outputDir)
+	return generateResource(DefaultDir(), "stage.tf", f)
 }
 
-func GeneratePipes(databaseName, schemaName string) {
-	sdb, err := GetDB()
-	if err != nil {
-		log.Fatal(err)
+func GeneratePipes(dbName, schemaName string) (*TFResources, error) {
+	f := func(in *TFResources, sdb *sqlx.DB) error {
+		dbs, err := snowflake.ListPipes(dbName, schemaName, sdb.DB)
+		if err != nil {
+			return err
+		}
+		for _, u := range dbs {
+			in.Collect(u)
+		}
+		return nil
 	}
 
-	ps, err := snowflake.ListPipes(databaseName, schemaName, sdb.DB)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	outputDir := DefaultDir()
-	var res TFResources
-
-	for _, p := range ps {
-		res.Collect(p)
-	}
-
-	outFile := filepath.Join(outputDir, "pipe.tf")
-
-	if err := RunGenerateTerraformFiles(res, outputDir, outFile); err != nil {
-		log.Fatalln(err)
-	}
-
-	if err := RunTerraformImport(res, outputDir); err != nil {
-		log.Fatalln(err)
-	}
+	return generateResource(DefaultDir(), "pipe.tf", f)
 }
 
-func GenerateUsers() {
-	sdb, err := GetDB()
-	if err != nil {
-		log.Fatal(err)
+func GenerateUsers() (*TFResources, error) {
+	f := func(in *TFResources, sdb *sqlx.DB) error {
+		users, err := snowflake.ListUsers(sdb.DB)
+		if err != nil {
+			return err
+		}
+		for _, user := range users {
+			in.Collect(user)
+		}
+		return nil
 	}
 
-	outputDir := DefaultDir()
-	var res TFResources
-
-	users, err := snowflake.ListUsers(sdb.DB)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, u := range users {
-		res.Collect(u)
-	}
-
-	outFile := filepath.Join(outputDir, "user.tf")
-
-	RunGenerateTerraformFiles(res, outputDir, outFile)
-	RunTerraformImport(res, outputDir)
+	return generateResource(DefaultDir(), "user.tf", f)
 }
 
 func GenerateSchema(databaseName string) (*TFResources, error) {
-	f := func(in TFResources, sdb *sqlx.DB) error {
+	f := func(in *TFResources, sdb *sqlx.DB) error {
 		users, err := snowflake.ListSchemas(databaseName, sdb.DB)
 		if err != nil {
 			return err
@@ -259,7 +223,7 @@ func GenerateSchema(databaseName string) (*TFResources, error) {
 }
 
 func GenerateViews(databaseName, schemaName string) (*TFResources, error) {
-	f := func(in TFResources, sdb *sqlx.DB) error {
+	f := func(in *TFResources, sdb *sqlx.DB) error {
 		views, err := snowflake.ListViews(databaseName, schemaName, sdb.DB)
 		if err != nil {
 			return err
@@ -274,7 +238,7 @@ func GenerateViews(databaseName, schemaName string) (*TFResources, error) {
 }
 
 func GenerateRoles() (*TFResources, error) {
-	f := func(in TFResources, sdb *sqlx.DB) error {
+	f := func(in *TFResources, sdb *sqlx.DB) error {
 		roles, err := snowflake.ListRoles(sdb.DB)
 		if err != nil {
 			return err
@@ -289,7 +253,7 @@ func GenerateRoles() (*TFResources, error) {
 }
 
 func GenerateWareshouses() (*TFResources, error) {
-	f := func(in TFResources, sdb *sqlx.DB) error {
+	f := func(in *TFResources, sdb *sqlx.DB) error {
 		warehouses, err := snowflake.ListWarehouses(sdb.DB)
 		if err != nil {
 			return err
@@ -303,24 +267,27 @@ func GenerateWareshouses() (*TFResources, error) {
 	return generateResource(DefaultDir(), "warehouse.tf", f)
 }
 
-type resfunc func(in TFResources, sdb *sqlx.DB) error
+type resfunc func(in *TFResources, sdb *sqlx.DB) error
 
 func generateResource(outputDir string, outFile string, f resfunc) (*TFResources, error) {
+	var res TFResources
+
 	sdb, err := GetDB()
 	if err != nil {
 		return nil, err
 	}
 
-	var res TFResources
-
-	err = f(res, sdb)
-
-	if err != nil {
+	if err := f(&res, sdb); err != nil {
 		return nil, err
 	}
 
-	RunGenerateTerraformFiles(res, outputDir, outFile)
-	RunTerraformImport(res, outputDir)
+	if err := RunGenerateTerraformFiles(&res, outputDir, outFile); err != nil {
+		return nil, err
+	}
+
+	if err := RunTerraformImport(res, outputDir); err != nil {
+		return nil, err
+	}
 
 	return &res, nil
 }
