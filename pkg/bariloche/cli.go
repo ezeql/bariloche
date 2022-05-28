@@ -16,11 +16,11 @@ import (
 )
 
 type TFResources struct {
-	data []snowflake.TFResource
+	Data []snowflake.TFResource
 }
 
 func (r *TFResources) Collect(res snowflake.TFResource) {
-	r.data = append(r.data, res)
+	r.Data = append(r.Data, res)
 }
 
 func RunGenerateTerraformFiles(resources TFResources, outputDir string, outFile string) error {
@@ -44,7 +44,7 @@ func RunGenerateTerraformFiles(resources TFResources, outputDir string, outFile 
 		return w.Flush()
 	}()
 
-	for _, r := range resources.data {
+	for _, r := range resources.Data {
 		w.Write(r.HCL())
 	}
 
@@ -82,7 +82,7 @@ func RunTerraformImport(resources TFResources, outputDir string) error {
 		return fmt.Errorf("error running Init: %w", err)
 	}
 
-	for _, res := range resources.data {
+	for _, res := range resources.Data {
 		err = tf.Import(context.Background(), res.Address(), res.ID())
 		if err != nil {
 			fmt.Printf("error running Import res: %s \n", err)
@@ -150,8 +150,20 @@ func GenerateTables(dbName, schemaName string) {
 
 }
 
-func GenerateDatabases() {
-	// snowflake.ListDatases()
+func GenerateDatabases() (*TFResources, error) {
+	f := func(in TFResources, sdb *sqlx.DB) error {
+		dbs, err := snowflake.ListDatabases(sdb)
+		if err != nil {
+			return err
+		}
+		for _, u := range dbs {
+			in.Collect(u)
+		}
+		return nil
+	}
+
+	return generateResource(DefaultDir(), "database.tf", f)
+
 }
 func GenerateStages(dbName, schemaName string) {
 	sdb, err := GetDB()
@@ -177,6 +189,35 @@ func GenerateStages(dbName, schemaName string) {
 	RunTerraformImport(res, outputDir)
 }
 
+func GeneratePipes(databaseName, schemaName string) {
+	sdb, err := GetDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ps, err := snowflake.ListPipes(databaseName, schemaName, sdb.DB)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	outputDir := DefaultDir()
+	var res TFResources
+
+	for _, p := range ps {
+		res.Collect(p)
+	}
+
+	outFile := filepath.Join(outputDir, "pipe.tf")
+
+	if err := RunGenerateTerraformFiles(res, outputDir, outFile); err != nil {
+		log.Fatalln(err)
+	}
+
+	if err := RunTerraformImport(res, outputDir); err != nil {
+		log.Fatalln(err)
+	}
+}
+
 func GenerateUsers() {
 	sdb, err := GetDB()
 	if err != nil {
@@ -199,4 +240,87 @@ func GenerateUsers() {
 
 	RunGenerateTerraformFiles(res, outputDir, outFile)
 	RunTerraformImport(res, outputDir)
+}
+
+func GenerateSchema(databaseName string) (*TFResources, error) {
+	f := func(in TFResources, sdb *sqlx.DB) error {
+		users, err := snowflake.ListSchemas(databaseName, sdb.DB)
+		if err != nil {
+			return err
+		}
+		for _, u := range users {
+			in.Collect(u)
+		}
+		return nil
+	}
+
+	return generateResource(DefaultDir(), "schema.tf", f)
+
+}
+
+func GenerateViews(databaseName, schemaName string) (*TFResources, error) {
+	f := func(in TFResources, sdb *sqlx.DB) error {
+		views, err := snowflake.ListViews(databaseName, schemaName, sdb.DB)
+		if err != nil {
+			return err
+		}
+		for _, v := range views {
+			in.Collect(v)
+		}
+		return nil
+	}
+
+	return generateResource(DefaultDir(), "view.tf", f)
+}
+
+func GenerateRoles() (*TFResources, error) {
+	f := func(in TFResources, sdb *sqlx.DB) error {
+		roles, err := snowflake.ListRoles(sdb.DB)
+		if err != nil {
+			return err
+		}
+		for _, r := range roles {
+			in.Collect(r)
+		}
+		return nil
+	}
+
+	return generateResource(DefaultDir(), "role.tf", f)
+}
+
+func GenerateWareshouses() (*TFResources, error) {
+	f := func(in TFResources, sdb *sqlx.DB) error {
+		warehouses, err := snowflake.ListWarehouses(sdb.DB)
+		if err != nil {
+			return err
+		}
+		for _, w := range warehouses {
+			in.Collect(w)
+		}
+		return nil
+	}
+
+	return generateResource(DefaultDir(), "warehouse.tf", f)
+}
+
+type resfunc func(in TFResources, sdb *sqlx.DB) error
+
+func generateResource(outputDir string, outFile string, f resfunc) (*TFResources, error) {
+	sdb, err := GetDB()
+	if err != nil {
+		return nil, err
+	}
+
+	var res TFResources
+
+	err = f(res, sdb)
+
+	if err != nil {
+		return nil, err
+	}
+
+	RunGenerateTerraformFiles(res, outputDir, outFile)
+	RunTerraformImport(res, outputDir)
+
+	return &res, nil
 }
