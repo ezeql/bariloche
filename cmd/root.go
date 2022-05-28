@@ -17,9 +17,8 @@ var cfgFile string
 const EnvPrefix = "SNOWFLAKE"
 
 // var databaseName string
-var tableName string
+// var tableName string
 var schemaNema string
-
 var databaseName string
 
 // rootCmd represents the base command when called without any subcommands

@@ -5,53 +5,45 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 
+	"github.com/ezeql/bariloche/pkg/bariloche"
 	"github.com/spf13/cobra"
 )
 
 // generateAllCmd represents the generateAll command
 var generateAllCmd = &cobra.Command{
 	Use:   "generateAll",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "",
+	Long:  "",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("generateAll called")
 
-		generateDatabasesCmd.Run(cmd, args)
+		dbs, err := bariloche.GenerateDatabases() //adapt to the new type
+		if err != nil {
+			log.Fatalln(err)
+		}
 
-		//have all databases
+		for _, db := range dbs.Data {
+			schemas, err := bariloche.GenerateSchema(db.ID())
+			if err != nil {
+				log.Fatalln(err)
+			}
+			for _, schema := range schemas.Data {
+				bariloche.GenerateTables(db.ID(), schema.ID()) //TODO: continue from here
+				bariloche.GeneratePipes(db.ID(), schema.ID())
+				bariloche.GenerateStages(db.ID(), schema.ID())
+				bariloche.GenerateViews(db.ID(), schema.ID())
+			}
+		}
 
-		//list all schemas for a db
+		bariloche.GenerateUsers()
+		bariloche.GenerateRoles()
+		bariloche.GenerateWareshouses()
 
-		//list all stables for a schema
-
-		// generatePipesCmd.Run(cmd, args)
-		// generateRolesCmd.Run(cmd, args)
-		// generateStagesCmd.Run(cmd, args)
-
-		// generateTablesCmd.Run(cmd, args)
-
-		// generateUsersCmd.Run(cmd, args)
-		// generateViewsCmd.Run(cmd, args)
-		// generateWarehousesCmd.Run(cmd, args)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(generateAllCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// generateAllCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// generateAllCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
