@@ -20,10 +20,6 @@ func (db Database) ID() string {
 	return db.DBName.String
 }
 
-// func PipeID(pipe Pipe) string {
-// 	return fmt.Sprintf("%v|%v|%v", pipe.DatabaseName, pipe.SchemaName, pipe.Name)
-// }
-
 func (db Database) HCL() []byte {
 	return buildTerraformHelper(SnowflakeDatabase, db.DBName.String).
 		SetAttributeString("name", db.DBName.String).
