@@ -31,6 +31,7 @@ func (s Schema) ID() string {
 func (s Schema) HCL() []byte {
 	return buildTerraformHelper(SnowflakeSchema, s.Name.String).
 		SetAttributeNullString("name", s.Name).
+		SetAttributeNullString("database", s.DatabaseName).
 		SetAttributeNullString("comment", s.Comment).File.Bytes()
 }
 
