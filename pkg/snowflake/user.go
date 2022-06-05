@@ -46,6 +46,9 @@ func (u User) Address() string {
 func (u User) ID() string {
 	return u.Name.String
 }
+func (u User) ResourceName() string {
+	return u.Name.String
+}
 
 func (u User) HCL() []byte {
 	return GenerateUser(u)

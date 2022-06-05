@@ -34,6 +34,11 @@ type TableB struct {
 func (t TableB) Address() string {
 	return fmt.Sprintf("%v.%v", SnowflakeTable, strings.ToLower(t.Name.String))
 }
+
+func (t TableB) ResourceName() string {
+	return fmt.Sprintf("%v.%v", SnowflakeTable, strings.ToLower(t.Name.String))
+}
+
 func (t TableB) ID() string {
 	return TableID(t)
 }
@@ -52,6 +57,7 @@ func TableFilePath(t TableB) string {
 
 func ListTables(databaseName string, schemaName string, db *sql.DB) ([]TableB, error) {
 	stmt := fmt.Sprintf(`SHOW TABLES IN SCHEMA "%s"."%v"`, databaseName, schemaName)
+	fmt.Printf("stmt: %v\n", stmt)
 	rows, err := Query(db, stmt)
 	if err != nil {
 		return nil, err

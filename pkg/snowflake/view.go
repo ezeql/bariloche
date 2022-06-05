@@ -23,6 +23,9 @@ type View struct {
 func (v View) Address() string {
 	return fmt.Sprintf("%v.%v", SnowflakeView, strings.ToLower(v.Name.String))
 }
+func (v View) ResourceName() string {
+	return fmt.Sprintf("%v_%v_%v", v.DatabaseName.String, v.SchemaName.String, v.Name.String)
+}
 func (v View) ID() string {
 	return fmt.Sprintf("%v|%v|%v", v.DatabaseName.String, v.SchemaName.String, v.Name.String)
 }
@@ -33,7 +36,10 @@ func (v View) ID() string {
 // }
 
 func (v View) HCL() []byte {
-	panic("not implemented")
+	return buildTerraformHelper(SnowflakeView, fmt.Sprintf("%v_%v_%v", v.DatabaseName.String, v.SchemaName.String, v.Name.String)).
+		SetAttributeNullString("name", v.Name).
+		SetAttributeNullString("database", v.DatabaseName).
+		SetAttributeNullString("comment", v.Comment).File.Bytes()
 }
 
 // func GeneratePipeImport(pipe Pipe) string {
@@ -54,8 +60,6 @@ func ListViews(databaseName string, schemaName string, db *sql.DB) ([]View, erro
 		log.Printf("[DEBUG] no views found")
 		return nil, nil
 	}
-
-	log.Println("eror", err)
 
 	return dbs, err
 }

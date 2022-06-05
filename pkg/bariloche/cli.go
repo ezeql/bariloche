@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ezeql/bariloche/pkg/snowflake"
 	"github.com/hashicorp/terraform-exec/tfexec"
@@ -26,7 +27,7 @@ func (r *TFResources) Collect(res snowflake.TFResource) {
 func RunGenerateTerraformFiles(resources *TFResources, outputDir string, outFile string) error {
 	log.Println("generating terraform files")
 	if len(resources.Data) == 0 {
-		return fmt.Errorf("nothing to generate")
+		return nil
 	}
 	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
 		return err
@@ -36,7 +37,7 @@ func RunGenerateTerraformFiles(resources *TFResources, outputDir string, outFile
 		return err
 	}
 
-	fileAbs := filepath.Join(outputDir, outFile)
+	fileAbs := strings.ToLower(filepath.Join(outputDir, outFile))
 
 	f, err := os.Create(fileAbs)
 	if err != nil {
@@ -89,9 +90,9 @@ func RunTerraformImport(resources TFResources, outputDir string) error {
 
 	for _, res := range resources.Data {
 		err = tf.Import(context.Background(), res.Address(), res.ID())
+		log.Printf("Import: Address: '%v' ID: '%v'", res.Address(), res.ID())
 		if err != nil {
-			fmt.Printf("error running Import res: %s \n", err)
-			continue
+			log.Fatalf("Error while importing: %v \n", err)
 		}
 	}
 
@@ -130,40 +131,49 @@ func GetDB() (*sqlx.DB, error) {
 	return sqlx.Open("snowflake", dsn)
 }
 
-func GenerateTables(dbName, schemaName string) (*TFResources, error) {
+func GenerateTables(databaseName, schemaName string) (*TFResources, error) {
 	f := func(in *TFResources, sdb *sqlx.DB) error {
-		dbs, err := snowflake.ListTables(dbName, schemaName, sdb.DB)
+		tables, err := snowflake.ListTables(databaseName, schemaName, sdb.DB)
 		if err != nil {
 			return err
 		}
-		for _, db := range dbs {
-			in.Collect(db)
+		for _, table := range tables {
+			if table.Name.String != "information_schema" {
+				in.Collect(table)
+			}
+
 		}
 		return nil
 	}
 
-	return generateResource(DefaultDir(), "table.tf", f)
-
+	return generateResource(DefaultDir(), databaseName+"_"+schemaName+"_"+"table.tf", f)
 }
 
 func GenerateDatabases() (*TFResources, error) {
+	bannedDatabases := []string{"snowflake"}
 	f := func(in *TFResources, sdb *sqlx.DB) error {
 		dbs, err := snowflake.ListDatabases(sdb)
 		if err != nil {
 			return err
 		}
+
 		for _, u := range dbs {
-			in.Collect(u)
+			if !isBanned(u.DBName.String, bannedDatabases) &&
+				(!strings.HasPrefix(strings.ToLower(u.DBName.String), "snowflake_sample_data")) {
+				in.Collect(u)
+
+			}
 		}
+
 		return nil
 	}
 
 	return generateResource(DefaultDir(), "database.tf", f)
 
 }
-func GenerateStages(dbName, schemaName string) (*TFResources, error) {
+func GenerateStages(databaseName, schemaName string) (*TFResources, error) {
 	f := func(in *TFResources, sdb *sqlx.DB) error {
-		dbs, err := snowflake.ListStages(dbName, schemaName, sdb.DB)
+		dbs, err := snowflake.ListStages(databaseName, schemaName, sdb.DB)
 		if err != nil {
 			return err
 		}
@@ -173,12 +183,12 @@ func GenerateStages(dbName, schemaName string) (*TFResources, error) {
 		return nil
 	}
 
-	return generateResource(DefaultDir(), "stage.tf", f)
+	return generateResource(DefaultDir(), databaseName+"_"+schemaName+"_"+"stage.tf", f)
 }
 
-func GeneratePipes(dbName, schemaName string) (*TFResources, error) {
+func GeneratePipes(databaseName, schemaName string) (*TFResources, error) {
 	f := func(in *TFResources, sdb *sqlx.DB) error {
-		dbs, err := snowflake.ListPipes(dbName, schemaName, sdb.DB)
+		dbs, err := snowflake.ListPipes(databaseName, schemaName, sdb.DB)
 		if err != nil {
 			return err
 		}
@@ -188,17 +198,21 @@ func GeneratePipes(dbName, schemaName string) (*TFResources, error) {
 		return nil
 	}
 
-	return generateResource(DefaultDir(), "pipe.tf", f)
+	return generateResource(DefaultDir(), databaseName+"_"+schemaName+"_"+"pipe.tf", f)
 }
 
 func GenerateUsers() (*TFResources, error) {
+	bannedUsers := []string{"snowflake"}
 	f := func(in *TFResources, sdb *sqlx.DB) error {
 		users, err := snowflake.ListUsers(sdb.DB)
 		if err != nil {
 			return err
 		}
 		for _, user := range users {
-			in.Collect(user)
+			if !isBanned(strings.ToLower(user.Name.String), bannedUsers) {
+				in.Collect(user)
+			}
+
 		}
 		return nil
 	}
@@ -207,21 +221,35 @@ func GenerateUsers() (*TFResources, error) {
 }
 
 func GenerateSchema(databaseName string) (*TFResources, error) {
+	bannedSchema := []string{"information_schema"}
 	f := func(in *TFResources, sdb *sqlx.DB) error {
-		users, err := snowflake.ListSchemas(databaseName, sdb.DB)
+		schemas, err := snowflake.ListSchemas(databaseName, sdb.DB)
 		if err != nil {
 			return err
 		}
-		for _, u := range users {
-			in.Collect(u)
+		for _, s := range schemas {
+
+			if !isBanned(strings.ToLower(s.Name.String), bannedSchema) {
+				in.Collect(s)
+			}
+
 		}
 		return nil
 	}
 
-	return generateResource(DefaultDir(), "schema.tf", f)
+	return generateResource(DefaultDir(), databaseName+"_"+"schema.tf", f)
 
 }
 
+func isBanned(name string, list []string) bool {
+
+	for _, key := range list {
+		if strings.EqualFold(key, name) {
+			return true
+		}
+	}
+	return false
+}
 func GenerateViews(databaseName, schemaName string) (*TFResources, error) {
 	f := func(in *TFResources, sdb *sqlx.DB) error {
 		views, err := snowflake.ListViews(databaseName, schemaName, sdb.DB)
@@ -234,7 +262,7 @@ func GenerateViews(databaseName, schemaName string) (*TFResources, error) {
 		return nil
 	}
 
-	return generateResource(DefaultDir(), "view.tf", f)
+	return generateResource(DefaultDir(), databaseName+"_"+schemaName+"_"+"view.tf", f)
 }
 
 func GenerateRoles() (*TFResources, error) {

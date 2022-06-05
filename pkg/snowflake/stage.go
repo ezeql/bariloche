@@ -29,6 +29,10 @@ func (s Stage) ID() string {
 	return StageID(s)
 }
 
+func (s Stage) ResourceName() string {
+	return fmt.Sprintf("%v_%v", s.DatabaseName.String, s.Name.String)
+}
+
 func (s Stage) HCL() []byte {
 	return GenerateStage(s)
 }

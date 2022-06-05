@@ -28,6 +28,11 @@ type Pipe struct {
 func (p Pipe) Address() string {
 	return fmt.Sprintf("%v.%v", SnowflakePipe, strings.ToLower(p.Name))
 }
+
+func (p Pipe) ResourceName() string {
+	return strings.ToLower(fmt.Sprintf("%v_%v", p.DatabaseName, p.Name))
+}
+
 func (p Pipe) ID() string {
 	return PipeID(p)
 }

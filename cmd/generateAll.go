@@ -18,29 +18,50 @@ var generateAllCmd = &cobra.Command{
 	Long:  "",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("generateAll called")
+		bariloche.GenerateUsers()
 
+		fmt.Println("GenerateRoles")
+		bariloche.GenerateRoles()
+
+		fmt.Println("GenerateWareshouses")
+		bariloche.GenerateWareshouses()
+
+		fmt.Println("GenerateDatabases")
 		dbs, err := bariloche.GenerateDatabases() //adapt to the new type
 		if err != nil {
 			log.Fatalln(err)
 		}
 
 		for _, db := range dbs.Data {
+			fmt.Println("GenerateSchema")
 			schemas, err := bariloche.GenerateSchema(db.ID())
 			if err != nil {
-				log.Fatalln(err)
+				log.Fatalf("couldn't generates schema : %v\n", err)
 			}
 			for _, schema := range schemas.Data {
-				bariloche.GenerateTables(db.ID(), schema.ID()) //TODO: continue from here
-				bariloche.GeneratePipes(db.ID(), schema.ID())
-				bariloche.GenerateStages(db.ID(), schema.ID())
-				bariloche.GenerateViews(db.ID(), schema.ID())
+				fmt.Println("GenerateTables")
+				_, err := bariloche.GenerateTables(db.ID(), schema.ResourceName())
+				if err != nil {
+					log.Fatalf("couldn't generates table: %v\n", err)
+				}
+
+				fmt.Println("GeneratePipes")
+				_, err = bariloche.GeneratePipes(db.ID(), schema.ResourceName())
+				if err != nil {
+					log.Fatalln(err)
+				}
+
+				_, err = bariloche.GenerateStages(db.ID(), schema.ResourceName())
+				if err != nil {
+					log.Fatalln(err)
+				}
+
+				_, err = bariloche.GenerateViews(db.ID(), schema.ResourceName())
+				if err != nil {
+					log.Fatalln(err)
+				}
 			}
 		}
-
-		bariloche.GenerateUsers()
-		bariloche.GenerateRoles()
-		bariloche.GenerateWareshouses()
-
 	},
 }
 

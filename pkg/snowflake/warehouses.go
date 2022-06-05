@@ -36,9 +36,14 @@ func (w Warehouse) Address() string {
 func (w Warehouse) ID() string {
 	return w.Name
 }
+func (w Warehouse) ResourceName() string {
+	return w.Name
+}
 
 func (w Warehouse) HCL() []byte {
-	panic("not implemented")
+	return buildTerraformHelper(SnowflakeWarehouse, w.Name).
+		SetAttributeString("name", w.Name).
+		SetAttributeString("comment", w.Comment).File.Bytes()
 }
 
 // // Show returns the SQL query that will show the row representing this Warehouse.

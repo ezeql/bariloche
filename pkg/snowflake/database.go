@@ -16,6 +16,10 @@ func (db Database) Address() string {
 	return fmt.Sprintf("%v.%v", SnowflakeDatabase, strings.ToLower(db.DBName.String))
 }
 
+func (db Database) ResourceName() string {
+	return strings.ToLower(db.DBName.String)
+}
+
 func (db Database) ID() string {
 	return db.DBName.String
 }

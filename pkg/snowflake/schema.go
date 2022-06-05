@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -21,15 +20,19 @@ type Schema struct {
 }
 
 func (s Schema) Address() string {
-	return fmt.Sprintf("%v.%v", SnowflakeSchema, strings.ToLower(s.Name.String))
+	return JoinToLower(".", SnowflakeSchema, fmt.Sprintf("%v_%v", s.DatabaseName.String, s.Name.String))
 }
 
 func (s Schema) ID() string {
 	return fmt.Sprintf("%v|%v", s.DatabaseName.String, s.Name.String)
 }
 
+func (s Schema) ResourceName() string {
+	return s.Name.String
+}
+
 func (s Schema) HCL() []byte {
-	return buildTerraformHelper(SnowflakeSchema, s.Name.String).
+	return buildTerraformHelper(SnowflakeSchema, fmt.Sprintf("%v_%v", s.DatabaseName.String, s.Name.String)).
 		SetAttributeNullString("name", s.Name).
 		SetAttributeNullString("database", s.DatabaseName).
 		SetAttributeNullString("comment", s.Comment).File.Bytes()

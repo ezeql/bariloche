@@ -25,6 +25,10 @@ func (r Role) ID() string {
 	return r.Name.String
 }
 
+func (r Role) ResourceName() string {
+	return r.Name.String
+}
+
 func (r Role) HCL() []byte {
 	return buildTerraformHelper(SnowflakeRole, r.Name.String).
 		SetAttributeNullString("name", r.Name).
