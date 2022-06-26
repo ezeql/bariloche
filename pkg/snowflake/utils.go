@@ -26,6 +26,13 @@ func (h helper) SetAttributeString(k string, v string) helper {
 	return h
 }
 
+func (h helper) SetAttributeUInt(k string, v uint64) helper {
+	if v != 0 {
+		h.Body.SetAttributeValue(k, cty.NumberUIntVal(v))
+	}
+	return h
+}
+
 func (h helper) SetAttributeList(k string, vals []string) helper {
 	v, err := gocty.ToCtyValue(vals, cty.List(cty.String))
 	if err != nil {

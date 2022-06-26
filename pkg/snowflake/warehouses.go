@@ -43,6 +43,9 @@ func (w Warehouse) ResourceName() string {
 func (w Warehouse) HCL() []byte {
 	return buildTerraformHelper(SnowflakeWarehouse, w.Name).
 		SetAttributeString("name", w.Name).
+		SetAttributeString("warehouse_size", w.Size).
+		SetAttributeBool("auto_resume", w.AutoResume).
+		SetAttributeUInt("auto_suspend", uint64(w.AutoSuspend)).
 		SetAttributeString("comment", w.Comment).File.Bytes()
 }
 

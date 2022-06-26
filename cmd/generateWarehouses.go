@@ -13,11 +13,13 @@ import (
 // generateWarehousesCmd represents the generateWarehouses command
 var generateWarehousesCmd = &cobra.Command{
 	Use:   "generateWarehouses",
-	Short: "A brief description of your command",
+	Short: "",
 	Long:  "",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("generateWarehouses called")
+
+		fmt.Println("GenerateWarehouses commmand")
 		bariloche.GenerateWareshouses()
+
 	},
 }
 
