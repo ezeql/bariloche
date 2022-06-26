@@ -24,8 +24,8 @@ func JoinToLower(sep string, terms ...string) string {
 	return strings.ToLower(strings.Join(terms, sep))
 }
 
-func GenerateTFImport(resourceType, resourceName, ID string) string {
-	return fmt.Sprintf(`terraform import %v.%v "%v"`, resourceType, resourceName, ID)
+func GenerateTFImport(res TFResource) string {
+	return fmt.Sprintf(`terraform import %v "%v"`, res.Address(), res.ID())
 }
 
 func GenerateProvider(outputDir string) error {

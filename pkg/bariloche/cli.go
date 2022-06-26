@@ -94,12 +94,14 @@ func RunTerraformImport(resources TFResources, outputDir string) error {
 		if err != nil {
 			log.Fatalf("Error while importing: %v \n", err)
 		}
+
+		tfimp := snowflake.GenerateTFImport(res)
+		log.Println(tfimp)
 	}
 
 	if _, err := tf.Show(context.Background()); err != nil {
 		return fmt.Errorf("error running Show: %w", err)
 	}
-	// fmt.Println("state", state.Values)
 
 	return nil
 }
