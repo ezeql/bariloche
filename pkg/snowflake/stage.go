@@ -53,10 +53,6 @@ func StageID(stage Stage) string {
 	return fmt.Sprintf("%v|%v|%v", stage.DatabaseName.String, stage.SchemaName.String, stage.Name.String)
 }
 
-func GenerateStageImport(stage Stage) string {
-	return GenerateTFImport(SnowflakeStage, stage.Name.String, StageID(stage))
-}
-
 func ListStages(databaseName string, schemaName string, db *sql.DB) ([]Stage, error) {
 	stmt := fmt.Sprintf(`SHOW STAGES IN SCHEMA "%s"."%v"`, databaseName, schemaName)
 	rows, err := Query(db, stmt)

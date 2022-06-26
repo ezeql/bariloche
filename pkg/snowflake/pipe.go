@@ -60,10 +60,6 @@ func PipeSQLFilePath(pipe Pipe) string {
 	return fmt.Sprintf("pipe_%v.sql", strings.ToLower(pipe.Name))
 }
 
-func GeneratePipeImport(pipe Pipe) string {
-	return GenerateTFImport(SnowflakePipe, pipe.Name, PipeID(pipe))
-}
-
 func ListPipes(databaseName string, schemaName string, db *sql.DB) ([]Pipe, error) {
 	stmt := fmt.Sprintf(`SHOW PIPES IN SCHEMA "%s"."%v"`, databaseName, schemaName)
 	rows, err := Query(db, stmt)
